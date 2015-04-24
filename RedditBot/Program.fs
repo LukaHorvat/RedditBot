@@ -41,7 +41,7 @@ let rec g2aCheck lastDay : unit Async = async {
         let! res = Async.AwaitTask <| client.GetStringAsync(url)
         let json = JsonValue.Parse(res)
         let minPrice = json.GetProperty("minPrice").AsFloat()
-        use cont = new StringContent("Lowest GTA V price: €" + minPrice.ToString())
+        use cont = new StringContent("Lowest GTA V price: €" + minPrice.ToString() + "\nat https://www.g2a.com/grand-theft-auto-v-cd-key-global.html")
         do! (client.PostAsync(API.url, cont) |> Async.AwaitTask |> Async.Ignore)
         do! Async.Sleep (24 * 60 * 60 * 1000)
         return! g2aCheck time.Day
