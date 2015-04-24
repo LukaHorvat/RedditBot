@@ -34,6 +34,22 @@ let check set = async {
         else return set
 }
 
+let rec g2aCheck lastDay : unit Async = async {
+    let url = "https://www.g2a.com/lucene/item/915"
+    let time = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("Central European Standard Time"))
+    if time.Hour >= 18 && time.Day <> lastDay then
+        let! res = Async.AwaitTask <| client.GetStringAsync(url)
+        let json = JsonValue.Parse(res)
+        let minPrice = json.GetProperty("minPrice").AsFloat()
+        use cont = new StringContent("Lowest GTA V price: €" + minPrice.ToString())
+        do! (client.PostAsync(API.url, cont) |> Async.AwaitTask |> Async.Ignore)
+        do! Async.Sleep (24 * 60 * 60 * 1000)
+        return! g2aCheck time.Day
+    else 
+        do! Async.Sleep (5 * 60 * 1000)
+        return! g2aCheck lastDay
+}
+
 [<EntryPoint>]
 let main argv =
     let rec repeat set = async {
@@ -42,5 +58,5 @@ let main argv =
         do! repeat newSet
     }
     printfn "RedditBot running..."
-    Async.RunSynchronously (repeat Set.empty)
+    Async.Parallel [repeat Set.empty; g2aCheck -1] |> Async.RunSynchronously |> ignore
     0 // return an integer exit code
